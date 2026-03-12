@@ -1,4 +1,3 @@
-import datetime
 import os
 import pickle
 import shutil
@@ -9,6 +8,7 @@ import pandas as pd
 from azure.storage.blob import BlobServiceClient
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
+from backend.formulas import din33466, sac, timedelta_minutes
 
 ENV_STORAGE_KEY = "AZURE_STORAGE_CONNECTION_STRING"
 MODEL_CONTAINER_PREFIX = "hikeplanner-model"
@@ -55,20 +55,6 @@ with open(gbr_model_path, 'rb') as fid:
 linear_model_path = Path(".", "model", "LinearRegression.pkl")
 with open(linear_model_path, 'rb') as fid:
     linear_model = pickle.load(fid)
-
-def din33466(uphill, downhill, distance):
-    km = distance / 1000.0
-    vertical = downhill / 500.0 + uphill / 300.0
-    horizontal = km / 4.0
-    return 3600.0 * (min(vertical, horizontal) / 2 + max(vertical, horizontal))
-
-def sac(uphill, downhill, distance):
-    km = distance / 1000.0
-    return 3600.0 * (uphill/400.0 + km /4.0)
-
-def timedelta_minutes(seconds):
-    rounded_minutes = int(round(seconds / 60.0))
-    return str(datetime.timedelta(minutes=rounded_minutes))
 
 print("\n*** Flask Backend ***")
 app = Flask(__name__)

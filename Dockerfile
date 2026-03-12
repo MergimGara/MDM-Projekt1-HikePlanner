@@ -12,11 +12,11 @@ RUN pip install uv
 RUN uv sync --frozen --no-dev
 ENV PATH="/usr/src/app/.venv/bin:$PATH"
 
-# Copy application files
-COPY backend/app.py backend/app.py
+# Copy application files (entire backend folder for formulas.py)
+COPY backend/ backend/
 COPY frontend/build frontend/build
 
 # Docker Run Command
 EXPOSE 80
-ENV FLASK_APP=/usr/src/app/backend/app.py
+ENV FLASK_APP=backend/app.py
 CMD [ "python", "-m" , "flask", "run", "--host=0.0.0.0", "--port=80"]

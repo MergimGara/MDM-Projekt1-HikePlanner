@@ -12,11 +12,14 @@ from backend.formulas import din33466, sac, timedelta_minutes
 
 ENV_STORAGE_KEY = "AZURE_STORAGE_CONNECTION_STRING"
 MODEL_CONTAINER_PREFIX = "hikeplanner-model"
-
 # init app, load model from storage
-env_path = Path(__file__).resolve().parent.parent / ".env"
+BASE_DIR = Path(__file__).resolve().parent.parent
+env_path = BASE_DIR / ".env"
 load_dotenv(env_path, override=True)
+
 print("*** Load Model from Blob Storage ***")
+local_model_dir = BASE_DIR / "model"
+
 if ENV_STORAGE_KEY in os.environ:
     azureStorageConnectionString = os.environ[ENV_STORAGE_KEY]
     blob_service_client = BlobServiceClient.from_connection_string(azureStorageConnectionString)
@@ -29,12 +32,11 @@ if ENV_STORAGE_KEY in os.environ:
     )
     model_folder = f"{MODEL_CONTAINER_PREFIX}-{suffix}"
     print(f"using version {model_folder}")
-    
+
     container_client = blob_service_client.get_container_client(model_folder)
     blob_list = list(container_client.list_blobs())
 
     # Download all blobs to a clean local folder
-    local_model_dir = Path("./model")
     if local_model_dir.exists():
         shutil.rmtree(local_model_dir)
     local_model_dir.mkdir(parents=True, exist_ok=True)
@@ -46,25 +48,29 @@ if ENV_STORAGE_KEY in os.environ:
 
 else:
     print("CANNOT ACCESS AZURE BLOB STORAGE - Please set AZURE_STORAGE_CONNECTION_STRING. Current env: ")
-    print(os.environ)
+    # print(os.environ) # Security: Don't print all env vars in production
 
-gbr_model_path = Path(".", "model", "GradientBoostingRegressor.pkl")
+gbr_model_path = local_model_dir / "GradientBoostingRegressor.pkl"
 with open(gbr_model_path, 'rb') as fid:
     gradient_model = pickle.load(fid)
 
-linear_model_path = Path(".", "model", "LinearRegression.pkl")
+linear_model_path = local_model_dir / "LinearRegression.pkl"
 with open(linear_model_path, 'rb') as fid:
     linear_model = pickle.load(fid)
+
+from backend.formulas import din33466, sac, timedelta_minutes
 
 print("\n*** Flask Backend ***")
 app = Flask(__name__)
 cors = CORS(app)
-app = Flask(__name__, static_url_path='/', static_folder='../frontend/build')
+
+# Use absolute paths for static files to work in both local and Docker environments
+frontend_path = (BASE_DIR / "frontend" / "build").resolve()
+app = Flask(__name__, static_url_path='/', static_folder=str(frontend_path))
 
 @app.route("/")
 def indexPage():
-     return send_file("../frontend/build/index.html")  
-
+     return send_file(str(frontend_path / "index.html"))  
 @app.route("/api/predict")
 def hello_world():
     downhill = request.args.get('downhill', default = 0, type = int)

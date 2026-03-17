@@ -58,8 +58,6 @@ linear_model_path = local_model_dir / "LinearRegression.pkl"
 with open(linear_model_path, 'rb') as fid:
     linear_model = pickle.load(fid)
 
-from backend.formulas import din33466, sac, timedelta_minutes
-
 print("\n*** Flask Backend ***")
 app = Flask(__name__)
 cors = CORS(app)

@@ -1,5 +1,4 @@
 import os
-import shutil
 from pathlib import Path
 from azure.storage.blob import BlobServiceClient
 from dotenv import load_dotenv

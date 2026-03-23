@@ -25,46 +25,54 @@ if ENV_STORAGE_KEY in os.environ:
     blob_service_client = BlobServiceClient.from_connection_string(azureStorageConnectionString)
 
     containers = blob_service_client.list_containers(include_metadata=True)
-    suffix = max(
-        int(container.name.split("-")[-1])
-        for container in containers
-        if container.name.startswith(MODEL_CONTAINER_PREFIX)
-    )
-    model_folder = f"{MODEL_CONTAINER_PREFIX}-{suffix}"
-    print(f"using version {model_folder}")
+    suffixes = []
+    for container in containers:
+        if container.name.startswith(MODEL_CONTAINER_PREFIX):
+            try:
+                suffixes.append(int(container.name.split("-")[-1]))
+            except (ValueError, IndexError):
+                continue
+    
+    if not suffixes:
+        print(f"No containers found starting with {MODEL_CONTAINER_PREFIX} and ending with a number.")
+    else:
+        suffix = max(suffixes)
+        model_folder = f"{MODEL_CONTAINER_PREFIX}-{suffix}"
+        print(f"using version {model_folder}")
 
-    container_client = blob_service_client.get_container_client(model_folder)
-    blob_list = list(container_client.list_blobs())
+        container_client = blob_service_client.get_container_client(model_folder)
+        blob_list = list(container_client.list_blobs())
 
-    # Download all blobs to a clean local folder
-    if local_model_dir.exists():
-        shutil.rmtree(local_model_dir)
-    local_model_dir.mkdir(parents=True, exist_ok=True)
-    for blob in blob_list:
-        download_file_path = local_model_dir / blob.name
-        print(f"downloading blob to {download_file_path.resolve()}")
-        with open(file=download_file_path, mode="wb") as download_file:
-            download_file.write(container_client.download_blob(blob.name).readall())
+        # Download all blobs to a clean local folder
+        if local_model_dir.exists():
+            shutil.rmtree(local_model_dir)
+        local_model_dir.mkdir(parents=True, exist_ok=True)
+        for blob in blob_list:
+            download_file_path = local_model_dir / blob.name
+            print(f"downloading blob to {download_file_path.resolve()}")
+            with open(file=download_file_path, mode="wb") as download_file:
+                download_file.write(container_client.download_blob(blob.name).readall())
 
 else:
-    print("CANNOT ACCESS AZURE BLOB STORAGE - Please set AZURE_STORAGE_CONNECTION_STRING. Current env: ")
-    # print(os.environ) # Security: Don't print all env vars in production
+    print("CANNOT ACCESS AZURE BLOB STORAGE - Please set AZURE_STORAGE_CONNECTION_STRING.")
 
 gbr_model_path = local_model_dir / "GradientBoostingRegressor.pkl"
+linear_model_path = local_model_dir / "LinearRegression.pkl"
+
+if not gbr_model_path.exists() or not linear_model_path.exists():
+    print(f"ERROR: Model files not found in {local_model_dir}")
+
 with open(gbr_model_path, 'rb') as fid:
     gradient_model = pickle.load(fid)
 
-linear_model_path = local_model_dir / "LinearRegression.pkl"
 with open(linear_model_path, 'rb') as fid:
     linear_model = pickle.load(fid)
 
 print("\n*** Flask Backend ***")
-app = Flask(__name__)
-cors = CORS(app)
-
 # Use absolute paths for static files to work in both local and Docker environments
 frontend_path = (BASE_DIR / "frontend" / "build").resolve()
 app = Flask(__name__, static_url_path='/', static_folder=str(frontend_path))
+cors = CORS(app)
 
 @app.route("/")
 def indexPage():

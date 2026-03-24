@@ -1,15 +1,30 @@
-# HikePlanner
+# 🏔️ HikePlanner Pro
 
-inspired by https://blog.mimacom.com/data-collection-scrapy-hiketime-prediction/
-similar dataset 
+HikePlanner ist eine Web-Applikation zur präzisen Vorhersage von Wanderzeiten. Das System kombiniert klassische Wanderformeln mit Machine Learning (Gradient Boosting & Linear Regression), trainiert auf realen GPX-Daten.
 
-## Data
+Inspired by [mimacom blog](https://blog.mimacom.com/data-collection-scrapy-hiketime-prediction/) and utilizing the [GPX Hike Tracks Dataset](https://www.kaggle.com/datasets/roccoli/gpx-hike-tracks).
 
-* https://www.kaggle.com/datasets/roccoli/gpx-hike-tracks
+---
 
-## ModelOps Pipeline
+## 🚀 Key Technical Highlights
 
-This project implements a full, automated ModelOps lifecycle. The pipeline ensures that the model is continuously trained with the latest data and the web application is always serving the best available model version.
+Das Projekt umfasst fortgeschrittene Implementierungen im Bereich MLOps und Frontend-Engineering:
+
+### Advanced CI/CD & Cloud Mocking
+*   **Pipeline Stability:** Die `ci.yml` führt bei jedem Push automatisierte Tests und Linting (Ruff) aus.
+*   **Early-Mocking Strategy:** Um die CI-Pipeline unabhängig von Azure-Credentials zu halten, wurde in `backend/test_app.py` ein **Advanced Mocking** implementiert. Wir fangen Cloud-Abhängigkeiten (Azure Blob Storage API) und Datei-Operationen (`pickle.load`) ab, *bevor* die App instanziiert wird. Dies demonstriert eine saubere Trennung von Infrastruktur und Logik während der Testphase.
+*   **Edge-Case Validation:** Die Testsuite validiert die API-Robustheit gegenüber extremen Eingabewerten (negative Höhenmeter, fehlende Parameter).
+
+### Interactive Frontend Experience
+*   **Predictive Analytics Visualisierung:** Die Ergebnisse von vier verschiedenen Modellen werden nicht nur als Text, sondern als **dynamische Vergleichsbalken** dargestellt, um die Modell-Unterschiede (Gradient vs. SAC etc.) visuell greifbar zu machen.
+*   **API Performance & Debouncing:** Ein 300ms Debouncing-Mechanismus für die Slider verhindert redundante API-Calls und optimiert die Serverlast.
+*   **Modern UX:** Nutzung von Svelte-Transitions, Loading-Spinnern und einem modernen Glassmorphism-Design für eine flüssige User-Experience.
+
+---
+
+## 🏗️ ModelOps Pipeline
+
+Dieses Projekt implementiert einen vollautomatisierten ModelOps-Lifecycle. Die Pipeline stellt sicher, dass das Modell kontinuierlich trainiert wird und die Web-App immer die beste verfügbare Version bereitstellt.
 
 ```mermaid
 graph TD
@@ -33,41 +48,41 @@ graph TD
         E -- serves latest model --> M;
         L[Svelte Frontend] <--> M;
     end
-
-    style F fill:#f9f,stroke:#333,stroke-width:2px
-    style G fill:#f9f,stroke:#333,stroke-width:2px
 ```
 
-## Azure Blob Storage
+---
 
-* **Save model to Azure Blob Storage**: The `model.yml` workflow automatically trains and pushes new, versioned models.
-* **Always save new version of model**: The backend dynamically loads the latest version by checking the highest version number (`hikeplanner-model-X`).
-* **Access**: Provided via GitHub Secrets (`AZURE_STORAGE_CONNECTION_STRING`) for Actions and as an environment variable in the Azure Web App.
+## ☁️ Azure Blob Storage Integration
 
-## GitHub Action
+*   **Modell-Management:** Die `model.yml` automatisiert das Training und den Upload neuer Modellversionen.
+*   **Dynamisches Laden:** Das Backend identifiziert beim Start automatisch die neueste Version (`hikeplanner-model-X`) im Blob Storage und lädt diese zur Laufzeit.
 
-* **model.yml**: Handles model training and publishing to Azure Blob Storage.
-* **deploy.yml**: Builds the production Docker image and deploys it to the Azure Web App.
-* **ci.yml**: Runs linters and tests on every push to ensure code quality.
+---
 
-## App
-* **Backend**: Python Flask (`backend/app.py`) serving the model predictions.
-* **Frontend**: SvelteKit (`frontend/`) providing the user interface.
+## 🛠️ GitHub Actions
 
-## Deployment with Docker
+*   **`ci.yml`**: Linting (Ruff) und Integration-Tests mit Cloud-Mocking.
+*   **`deploy.yml`**: Automatisierter Build und Deployment des Docker-Containers auf Azure App Services.
+*   **`model.yml`**: End-to-End Training-Pipeline für die ML-Modelle.
 
-* **Dockerfile**: Defines the container environment. The frontend is currently pre-built and copied.
-* **Dependencies**: Managed via `uv`.
-* **Cloud Integration**: The app connects to Azure Blob Storage on startup to download the latest ML model.
+---
 
-## Installation
+## 🚀 Installation & Setup
 
-* `pyenv local 3.13.7`
-* `uv venv .venv`
-* `uv sync`
-
-## Ideas
-
-* **Personalized Model**: Fine-tune the model for a specific user's hiking data.
-* **Multi-Stage Dockerfile**: Integrate the frontend build process directly into the Docker build.
-* **Monitoring**: Add logging for model predictions to detect potential model drift over time.
+1.  **Backend:**
+    ```bash
+    pyenv local 3.13.7
+    uv venv .venv
+    uv sync
+    ```
+2.  **Frontend:**
+    ```bash
+    cd frontend
+    npm install
+    npm run build
+    ```
+3.  **Docker (Lokal):**
+    ```bash
+    docker build -t hikeplanner .
+    docker run -p 80:80 -e AZURE_STORAGE_CONNECTION_STRING='your_key' hikeplanner
+    ```

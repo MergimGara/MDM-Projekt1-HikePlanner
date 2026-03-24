@@ -1,7 +1,5 @@
-import sys
 import unittest.mock as mock
 import pytest
-import pandas as pd
 import io
 
 # --- PROFESSIONAL MOCKING (NIVEAU 6.0) ---
@@ -33,6 +31,7 @@ with mock.patch('azure.storage.blob.BlobServiceClient.from_connection_string', r
 
 @pytest.fixture
 def client():
+    """Fixture für den Flask-Test-Client."""
     flask_app.config['TESTING'] = True
     with flask_app.test_client() as client:
         yield client

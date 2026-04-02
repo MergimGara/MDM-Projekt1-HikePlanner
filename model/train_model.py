@@ -54,7 +54,8 @@ def train_model():
     # 3. Vorbereitung der Features und Target
     # Wir filtern extrem kleine Werte oder Ausreißer (einfache Validierung)
     df = df[(df['moving_time'] > 60) & (df['length_3d'] > 100)]
-    
+    df = df.dropna(subset=['downhill', 'uphill', 'length_3d', 'max_elevation', 'moving_time'])
+
     X = df[['downhill', 'uphill', 'length_3d', 'max_elevation']]
     y = df['moving_time']
     

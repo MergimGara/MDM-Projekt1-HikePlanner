@@ -4,6 +4,8 @@ HikePlanner ist eine Web-Applikation zur präzisen Vorhersage von Wanderzeiten. 
 
 Inspired by [mimacom blog](https://blog.mimacom.com/data-collection-scrapy-hiketime-prediction/) and utilizing the [GPX Hike Tracks Dataset](https://www.kaggle.com/datasets/roccoli/gpx-hike-tracks).
 
+**Live Demo:** https://garamer1-f8bnenftc8b7h0a2.norwayeast-01.azurewebsites.net/
+
 ---
 
 ## 🚀 Key Technical Highlights
